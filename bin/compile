@@ -2,16 +2,35 @@
 
 set -eu
 
+# This script performs the buildpack transformation. BUILD_DIR will be the location of the app and CACHE_DIR will be a location the buildpack can use to cache build artifacts between builds.
+# ENV_DIR is a directory that contains a file for each of the application’s configuration variables. Config vars are made available as environment variables during execution of commands specified in the Procfile, as well as when running one-off processes.
+# See https://devcenter.heroku.com/articles/buildpack-api#bin-compile for additional documentation
+
+# Default location for vault release downloads
 PACKAGE_LOCATION="https://releases.hashicorp.com/vault"
 
+# Expected environment variable coming from Heroku. See: https://devcenter.heroku.com/articles/buildpack-api#bin-compile-usage
 declare BUILD_DIR
+
+# Expected environment variable coming from Heroku. See: https://devcenter.heroku.com/articles/buildpack-api#bin-compile-usage
 declare CACHE_DIR
+
+# Expected environment variable coming from Heroku. See: https://devcenter.heroku.com/articles/buildpack-api#bin-compile-usage
 declare ENV_DIR
+
+# These are dynamic variables that the script needs to be set in the configuration vars in order to proceed. See the following sources for additional information:
+# * https://devcenter.heroku.com/articles/buildpack-api#bin-compile-summary
+# * https://devcenter.heroku.com/articles/config-vars
 declare -a VAULT_VARIABLES=(
   "VAULT_VERSION"
 )
+
+# These variable is used as a means of communicating PATH changes in the subsequent .profile.d scripts.
+# See https://devcenter.heroku.com/articles/buildpack-api#profile-d-scripts for additional documentation
 declare VAULT_BIN
 
+# Parsing the expected arguments from Heroku in order to set the first three variables declared at the global scope
+# Any failure in this script indicates a significant change to buildpacks on Heroku
 function parse_args {
   echo "---> Parsing expected arguments from Heroku"
 
@@ -25,6 +44,8 @@ function parse_args {
   ENV_DIR=$3
 }
 
+# This function handles a read of the VAULT_VERSION from the ENV_DIR passed to the script
+# This will fail if any of the variables in VAULT_VARIABLES are unset in the config vars for the application
 function read_vault_version {
   echo "---> Processing required environment configuration"
   local variable_dir=$1
@@ -44,6 +65,8 @@ function read_vault_version {
   fi
 }
 
+# This handles the installation of vault. If a version of vault already exists in the CACHE_DIR, no new install will be conducted
+# Once vault is installed, the artifacts will be moved into a location where we can source them into the PATH
 function install_vault {
   echo "---> Beginning vault install, or cache lookup"
 
@@ -71,6 +94,7 @@ function install_vault {
   cp $file "${VAULT_BIN}/vault"
 }
 
+# Sets up the PATH modification scripts so that the vault commands can be executed easily
 function prepare_environment {
   echo "---> Preparing environment for compatibility"
 
@@ -82,6 +106,7 @@ function prepare_environment {
   echo 'export PATH="$PATH:$bin"' >> $profile_location/vault.sh
 }
 
+# Handles orchestrating of the build steps for the script
 main {
   echo "-> Vault buildpack compilation starting"
   parse_args "$@"
