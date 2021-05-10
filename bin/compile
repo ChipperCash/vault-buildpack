@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+
+set -eu
+
+PACKAGE_LOCATION="https://releases.hashicorp.com/vault"
+
+declare BUILD_DIR
+declare CACHE_DIR
+declare ENV_DIR
+declare -a VAULT_VARIABLES=(
+  "VAULT_VERSION"
+)
+declare VAULT_BIN
+
+function parse_args {
+  echo "---> Parsing expected arguments from Heroku"
+
+  if [[ $# > 3 ]]; then
+    echo "-----> Heroku has changed the arguments passed, unable to proceed"
+    exit ((1 + $#))
+  fi
+
+  BUILD_DIR=$1
+  CACHE_DIR=$2
+  ENV_DIR=$3
+}
+
+function read_vault_version {
+  echo "---> Processing required environment configuration"
+  local variable_dir=$1
+
+  if [[ -d ${variable_dir} ]]; then
+    for $variable in "${VAULT_VARIABLES[@]}"; do
+      local location="${variable_dir}/${variable}"
+
+      if [ ! -f $location ]; then
+        echo "-----> $variable not detected in environment, unable to proceed"
+        echo "-----> Please add $variable to the application config vars"
+        exit 1
+      fi
+
+      export "$variable=$(cat $location)"
+    done
+  fi
+}
+
+function install_vault {
+  echo "---> Beginning vault install, or cache lookup"
+
+  local build_location=$1
+  local cache_location=$2
+  local version=$3
+  local file="${cache_location}/vault_${version}"
+
+  mkdir -p "${cache_location}"
+  if [ ! -e $file ]; then
+    echo "-----> Installing vault version ${VAULT_VERSION}"
+  
+    curl --retry 2 \
+      --silent \
+      ${PACKAGE_LOCATION}/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip \
+      --output vault.zip
+    
+    unzip vault.zip
+    mv vault $file
+    rm vault.zip
+  fi
+
+  VAULT_BIN="${build_location}/.vault-buildpack/"
+  mkdir -p "${VAULT_BIN}"
+  cp $file "${VAULT_BIN}/vault"
+}
+
+function prepare_environment {
+  echo "---> Preparing environment for compatibility"
+
+  local build_location=$1
+  local bin=$2
+  local profile_location="${build_location}/.profile.d"
+
+  mkdir -p "${profile_location}"
+  echo 'export PATH="$PATH:$bin"' >> $profile_location/vault.sh
+}
+
+main {
+  echo "-> Vault buildpack compilation starting"
+  parse_args "$@"
+  read_vault_version $ENV_DIR
+  install_vault $BUILD_DIR $CACHE_DIR $VAULT_VERSION
+  prepare_environment $BUILD_DIR $VAULT_BIN
+  echo "-> Vault buildpack compilation complete"
+}
+
+main "$@"
