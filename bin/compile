@@ -107,7 +107,7 @@ function prepare_environment {
 }
 
 # Handles orchestrating of the build steps for the script
-main {
+function main {
   echo "-> Vault buildpack compilation starting"
   parse_args "$@"
   read_vault_version $ENV_DIR
