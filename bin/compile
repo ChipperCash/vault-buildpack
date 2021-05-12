@@ -79,10 +79,7 @@ function install_vault {
   if [ ! -e $file ]; then
     echo "-----> Installing vault version ${VAULT_VERSION}"
   
-    curl --retry 2 \
-      --silent \
-      ${PACKAGE_LOCATION}/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip \
-      --output vault.zip
+    curl ${PACKAGE_LOCATION}/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip --output vault.zip
     
     unzip vault.zip
     mv vault $file
