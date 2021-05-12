@@ -96,11 +96,10 @@ function prepare_environment {
   echo "---> Preparing environment for compatibility"
 
   local build_location=$1
-  local bin=$2
   local profile_location="${build_location}/.profile.d"
 
   mkdir -p "${profile_location}"
-  echo 'export PATH="$PATH:'$bin'"' >> $profile_location/vault.sh
+  echo 'export PATH="$PATH:$HOME/.vault-buildpack/"' >> ${profile_location}/vault.sh
 }
 
 # Handles orchestrating of the build steps for the script
