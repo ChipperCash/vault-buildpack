@@ -51,7 +51,7 @@ function read_vault_version {
   local variable_dir=$1
 
   if [[ -d ${variable_dir} ]]; then
-    for $variable in "${VAULT_VARIABLES[@]}"; do
+    for variable in "${VAULT_VARIABLES[@]}"; do
       local location="${variable_dir}/${variable}"
 
       if [ ! -f $location ]; then
