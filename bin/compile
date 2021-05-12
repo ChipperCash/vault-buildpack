@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eux
+set -eu
 
 # This script performs the buildpack transformation. BUILD_DIR will be the location of the app and CACHE_DIR will be a location the buildpack can use to cache build artifacts between builds.
 # ENV_DIR is a directory that contains a file for each of the application’s configuration variables. Config vars are made available as environment variables during execution of commands specified in the Procfile, as well as when running one-off processes.
@@ -79,7 +79,7 @@ function install_vault {
   if [ ! -e $file ]; then
     echo "-----> Installing vault version ${VAULT_VERSION}"
   
-    curl --verbose ${PACKAGE_LOCATION}/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip --output vault.zip
+    curl --silent ${PACKAGE_LOCATION}/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip --output vault.zip
     
     unzip vault.zip
     mv vault $file
@@ -106,9 +106,9 @@ function prepare_environment {
 function main {
   echo "-> Vault buildpack compilation starting"
   parse_args "$@"
-  read_vault_version $ENV_DIR
-  install_vault $BUILD_DIR $CACHE_DIR $VAULT_VERSION
-  prepare_environment $BUILD_DIR $VAULT_BIN
+  read_vault_version ${ENV_DIR}
+  install_vault ${BUILD_DIR} ${CACHE_DIR} ${VAULT_VERSION}
+  prepare_environment ${BUILD_DIR} ${VAULT_BIN}
   echo "-> Vault buildpack compilation complete"
 }
 
