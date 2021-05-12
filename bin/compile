@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eu
+set -eux
 
 # This script performs the buildpack transformation. BUILD_DIR will be the location of the app and CACHE_DIR will be a location the buildpack can use to cache build artifacts between builds.
 # ENV_DIR is a directory that contains a file for each of the application’s configuration variables. Config vars are made available as environment variables during execution of commands specified in the Procfile, as well as when running one-off processes.
@@ -100,7 +100,7 @@ function prepare_environment {
   local profile_location="${build_location}/.profile.d"
 
   mkdir -p "${profile_location}"
-  echo 'export PATH="$PATH:$bin"' >> $profile_location/vault.sh
+  echo 'export PATH="$PATH:'$bin'"' >> $profile_location/vault.sh
 }
 
 # Handles orchestrating of the build steps for the script
